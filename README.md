@@ -22,9 +22,9 @@ INMP441 ──I2S──► ESP32-S3 ──Wi-Fi──► gateway  POST /v1/voice
                     │                    │
                     │                    └──► Home Assistant
                     │
-                    └──I2S──► MAX98357A ──► speaker
-                                  ▲
-                    reply WAV ◄───┘  GET /v1/audio/<id>.wav
+                    ├──I2S──► MAX98357A ──► speaker
+                    │
+                    └──Wi-Fi──► gateway  GET /v1/audio/<id>.wav  (reply)
 ```
 
 The local wake word runs on the ESP32-S3 through
@@ -70,6 +70,9 @@ For firmware-only development without a real gateway:
 make mock             # starts tools/mock_gateway.py on :18125
 make gateway-test     # POSTs a test WAV with curl
 ```
+
+While using the mock, set `gateway_url` to `http://<workstation-ip>:18125`.
+The real gateway keeps its default `:8125`.
 
 ## Configuration
 

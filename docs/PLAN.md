@@ -14,6 +14,17 @@ A small, always-on device that:
 The phone app (`hass-bulgarian-voice`) remains the manual push-to-talk client.
 This device is a separate satellite, not a replacement for the app.
 
+## Status (2026-10-25)
+
+| Phase | Status |
+|---|---|
+| 0 — Scaffold | done: config + compile pass, mock gateway smoke test passes |
+| 1 — Hardware bring-up | next |
+| 2 — Real gateway | pending |
+| 3 — Custom wake word | pending |
+| 4 — UX / hardening | pending |
+| 5 — Optional | pending |
+
 ## 2. Non-goals for v1
 
 - Cloud wake word or cloud ASR.
