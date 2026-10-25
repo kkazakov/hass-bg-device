@@ -1,0 +1,62 @@
+name: firmware
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  config:
+    name: Validate ESPHome config
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ESPHome
+        run: pip install "esphome==2026.9.1"
+
+      - name: Create throwaway secrets
+        run: cp firmware/secrets.yaml.example firmware/secrets.yaml
+
+      - name: Compile-check Python tools
+        run: python3 -m py_compile tools/mock_gateway.py tools/make_test_wav.py
+
+      - name: Validate config
+        working-directory: .
+        run: esphome config firmware/bg-voice.yaml
+
+  build:
+    name: Build firmware (compile check)
+    runs-on: ubuntu-latest
+    needs: config
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ESPHome
+        run: pip install "esphome==2026.9.1"
+
+      - name: Create throwaway secrets
+        run: cp firmware/secrets.yaml.example firmware/secrets.yaml
+
+      - name: Cache ESPHome / ESP-IDF
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/esphome
+            firmware/.esphome
+          key: esphome-${{ runner.os }}-2026.9.1-${{ hashFiles('firmware/bg-voice.yaml', 'firmware/components/**', 'firmware/secrets.yaml.example') }}
+          restore-keys: |
+            esphome-${{ runner.os }}-2026.9.1-
+
+      - name: Compile
+        run: esphome compile firmware/bg-voice.yaml

@@ -1,0 +1,42 @@
+# Phrases for the „окей дом“ wake-word experiment.
+#
+# `primary` is the real target. `variants` are TTS spellings/pronunciations
+# used to widen speaker and accent coverage. English variants are deliberately
+# "dom"/"dawm", not "dome": Bulgarian "дом" is /dɔm/, English "dome" is /doʊm/.
+
+wake_word: "окей дом"
+languages:
+  - bg
+  - en
+
+primary:
+  - "окей дом"
+
+variants:
+  # Bulgarian
+  - "окей, дом"
+  - "окей дом!"
+  # English approximations of the Bulgarian vowels
+  - "okay dom"
+  - "okay dawm"
+  # Kept only as a negative/coverage variant, not the main target:
+  - "okay dome"
+
+hard_negatives:
+  - "окей"
+  - "дом"
+  - "окей добре"
+  - "окей доктор"
+  - "окей домат"
+  - "окей, да"
+  - "okay"
+  - "dom"
+  - "dome"
+  - "dawm"
+  - "okay doctor"
+  - "okay done"
+
+# Ambient negatives to source separately:
+# - Bulgarian TV/radio/podcasts (2-3 h minimum)
+# - music, household noise, conversation
+# - the device's own TTS replies

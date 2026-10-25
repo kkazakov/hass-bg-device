@@ -1,0 +1,142 @@
+substitutions:
+  device_name: bg-voice-satellite
+  friendly_name: BG Voice Satellite
+  # Base URL of hass-bg-gateway. No trailing slash. LAN or VPN address.
+  gateway_url: "http://192.168.1.10:8125"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  min_version: "2026.9.0"
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  flash_size: 16MB
+  cpu_frequency: 240MHz
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+  level: INFO
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none
+  ap:
+    ssid: "BG Voice fallback"
+    password: !secret ap_password
+
+captive_portal:
+
+# ---------------------------------------------------------------------------
+# Audio hardware
+#
+# INMP441:  VDD 3V3, GND, SCK=GPIO4, WS=GPIO5, SD=GPIO6, L/R=GND (left)
+# MAX98357A: VIN 5V, GND, BCLK=GPIO15, LRC=GPIO16, DIN=GPIO17, speaker
+# ---------------------------------------------------------------------------
+
+i2s_audio:
+  - id: i2s_in
+    i2s_lrclk_pin: GPIO5
+    i2s_bclk_pin: GPIO4
+  - id: i2s_out
+    i2s_lrclk_pin: GPIO16
+    i2s_bclk_pin: GPIO15
+
+microphone:
+  - platform: i2s_audio
+    id: mic
+    i2s_audio_id: i2s_in
+    adc_type: external
+    i2s_din_pin: GPIO6
+    pdm: false
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    channel: left
+
+speaker:
+  - platform: i2s_audio
+    id: spk
+    i2s_audio_id: i2s_out
+    i2s_dout_pin: GPIO17
+    dac_type: external
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    channel: mono
+    buffer_duration: 500ms
+
+# ---------------------------------------------------------------------------
+# Local wake word
+#
+# `okay_nabu` is the bring-up model. Replace it with a local `okay_dom` model
+# once docs/WAKE_WORD.md has produced one. Keep stop_after_detection: false so
+# the microphone keeps feeding bg_voice while the command is recorded.
+# ---------------------------------------------------------------------------
+
+micro_wake_word:
+  id: mww
+  microphone: mic
+  stop_after_detection: false
+  models:
+    - model: okay_nabu
+      probability_cutoff: 0.5
+      sliding_window_size: 10
+  on_wake_word_detected:
+    - lambda: |-
+        id(bg_voice_component).on_wake_word();
+
+# ---------------------------------------------------------------------------
+# Gateway client
+# ---------------------------------------------------------------------------
+
+external_components:
+  - source:
+      type: local
+      path: components
+
+bg_voice:
+  id: bg_voice_component
+  microphone: mic
+  speaker: spk
+  state_sensor: voice_state
+  gateway_url: ${gateway_url}
+  gateway_api_key: !secret gateway_api_key
+  # Tune these on real hardware.
+  vad_threshold: 500          # peak int16 amplitude considered speech
+  silence_ms: 800ms           # end of command after this much silence
+  max_command_ms: 12000ms     # hard cap per command
+  pre_roll_ms: 300ms          # audio kept before the wake word fires
+  no_speech_timeout_ms: 3000ms
+  http_timeout_ms: 30000ms
+
+text_sensor:
+  - platform: template
+    id: voice_state
+    name: "Voice state"
+    update_interval: never
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: true
+    id: action_button
+    name: "Action button"
+    on_press:
+      - lambda: |-
+          id(bg_voice_component).start_listening();

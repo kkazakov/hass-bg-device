@@ -1,0 +1,21 @@
+# ESPHome / ESP-IDF
+firmware/.esphome/
+firmware/secrets.yaml
+.esphome/
+build/
+*.bin
+*.elf
+*.map
+*.hex
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editors / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
